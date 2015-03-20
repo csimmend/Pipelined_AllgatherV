@@ -58,6 +58,7 @@ int main (int argc, char *argv[])
   ASSERT (source_array != 0);
 
   int *array_len = malloc(nProc * sizeof (int));
+  ASSERT (array_len != 0);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
