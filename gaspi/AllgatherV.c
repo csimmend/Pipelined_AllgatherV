@@ -167,6 +167,9 @@ int main (int argc, char *argv[])
 	      // set array_len
 	      array_len[array_id] = value;
 
+	      // local recv counter
+	      fnl++;
+	      	    
 	      // resend unless this is a return to sender
 	      if (array_id != to) 
 	      	{
@@ -184,9 +187,6 @@ int main (int argc, char *argv[])
 				 , queue_id
 				 , GASPI_BLOCK
 				 ));
-
-		    // local recv counter
-	      	    fnl++;
 	    	}
 	    }
 	}
