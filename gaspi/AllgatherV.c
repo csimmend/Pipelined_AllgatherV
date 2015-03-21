@@ -170,9 +170,9 @@ int main (int argc, char *argv[])
 	      // resend unless this is a return to sender
 	      if (array_id != to) 
 	      	{
-	      	const int len = array_len[array_id] * sizeof(double); 
-	      	swap_queue_and_wait(&queue_id);
-	      	SUCCESS_OR_DIE ( gaspi_write_notify
+	      	    const int len = array_len[array_id] * sizeof(double); 
+	      	    swap_queue_and_wait(&queue_id);
+	      	    SUCCESS_OR_DIE ( gaspi_write_notify
 			       ( segment_id
 				 , array_OFFSET (0, array_id)
 				 , to
@@ -185,8 +185,8 @@ int main (int argc, char *argv[])
 				 , GASPI_BLOCK
 				 ));
 
-		// local recv counter
-	      	fnl++;
+		    // local recv counter
+	      	    fnl++;
 	    	}
 	    }
 	}
