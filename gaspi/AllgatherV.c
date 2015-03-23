@@ -17,6 +17,7 @@
 #include "constant.h"
 #include "data.h"
 #include "now.h"
+#include "init.h"
 #include "success_or_die.h"
 #include "queue.h"
 #include "topology.h"
@@ -57,8 +58,8 @@ int main (int argc, char *argv[])
   SUCCESS_OR_DIE ( gaspi_segment_ptr (segment_id, &source_array) );
   ASSERT (source_array != 0);
 
-  int *array_len = malloc(nProc * sizeof (int));
-  ASSERT (array_len != 0);
+  int *num_recv = malloc(nProc * sizeof (int));
+  ASSERT (num_recv != 0);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -70,24 +71,21 @@ int main (int argc, char *argv[])
     {
       gaspi_rank_t left = LEFT(iProc);
       gaspi_rank_t right = RIGHT(iProc);
-      int i;
-
-      // notification init
-      for (i = 0; i < 2*nProc; i++) 
-	{
-	  gaspi_notification_t value;
-	  SUCCESS_OR_DIE (gaspi_notify_reset (segment_id
-					      , (gaspi_notification_id_t) i
-					      , &value
-					      ));
-	}
 
       // data init
       data_init(source_array
-		, array_len
+		, num_recv
 		, iProc
 		, nProc
 		);
+
+      // notification init
+      reset_notifications_gaspi(segment_id
+				, num_recv
+				, iProc
+				, nProc
+				);
+
 
       double time = -now();
       MPI_Barrier(MPI_COMM_WORLD);
@@ -95,7 +93,7 @@ int main (int argc, char *argv[])
       // initial write to left
       if (left != iProc) 
 	{
-	  const int len = array_len[iProc] * sizeof(double); 
+	  const int len = num_recv[iProc] * sizeof(double); 
 	  const gaspi_notification_id_t data_available = iProc; // left going
 	  swap_queue_and_wait(&queue_id);
 	  SUCCESS_OR_DIE ( gaspi_write_notify
@@ -106,7 +104,7 @@ int main (int argc, char *argv[])
 			     , array_OFFSET (0, iProc)
 			     , len
 			     , data_available
-			     , array_len[iProc] // array_len == notification val  
+			     , num_recv[iProc] // num_recv == notification val  
 			     , queue_id
 			     , GASPI_BLOCK
 			     ));
@@ -115,7 +113,7 @@ int main (int argc, char *argv[])
       // initial write to right
       if (right != iProc) 
 	{
-	  const int len = array_len[iProc] * sizeof(double); 
+	  const int len = num_recv[iProc] * sizeof(double); 
 	  const gaspi_notification_id_t data_available = iProc + nProc; // right going
 	  swap_queue_and_wait(&queue_id);
 	  SUCCESS_OR_DIE ( gaspi_write_notify
@@ -126,7 +124,7 @@ int main (int argc, char *argv[])
 			     , array_OFFSET (0, iProc)
 			     , len
 			     , data_available
-			     , array_len[iProc] // array_len == notification val  
+			     , num_recv[iProc] // num_recv == notification val  
 			     , queue_id
 			     , GASPI_BLOCK
 			     ));
@@ -162,10 +160,10 @@ int main (int argc, char *argv[])
 
 	  // we might receive some messages twice (!!!) 
 	  // (but we don't care)
-	  if (array_len[array_id] == -1)
+	  if (num_recv[array_id] == -1)
 	    {
-	      // set array_len
-	      array_len[array_id] = value;
+	      // set num_recv
+	      num_recv[array_id] = value;
 
 	      // local recv counter
 	      fnl++;
@@ -173,7 +171,7 @@ int main (int argc, char *argv[])
 	      // resend unless this is a return to sender
 	      if (array_id != to) 
 	      	{
-	      	    const int len = array_len[array_id] * sizeof(double); 
+	      	    const int len = num_recv[array_id] * sizeof(double); 
 	      	    swap_queue_and_wait(&queue_id);
 	      	    SUCCESS_OR_DIE ( gaspi_write_notify
 			       ( segment_id
@@ -183,7 +181,7 @@ int main (int argc, char *argv[])
 				 , array_OFFSET (0, array_id)
 				 , len
 				 , id // use old id
-				 , array_len[array_id]
+				 , num_recv[array_id]
 				 , queue_id
 				 , GASPI_BLOCK
 				 ));
@@ -209,6 +207,7 @@ int main (int argc, char *argv[])
 
   // validate */ 
   data_validate(source_array
+		, num_recv
 		, nProc
 		);
 

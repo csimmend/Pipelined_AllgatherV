@@ -17,6 +17,7 @@
 #include "constant.h"
 #include "data.h"
 #include "now.h"
+#include "init.h"
 #include "topology.h"
 
 #include <mpi.h>
@@ -26,7 +27,6 @@
 
 int main (int argc, char *argv[])
 {
-  int j, k;
   int nProc, iProc;
   int provided, required = MPI_THREAD_FUNNELED;
   MPI_Init_thread(&argc, &argv, required, &provided);
@@ -40,44 +40,47 @@ int main (int argc, char *argv[])
   ASSERT (source_array != 0);
   double *recv_array = malloc(M_SZ * nProc * sizeof (double));
   ASSERT (recv_array != 0);
-  int *array_len = malloc(nProc * sizeof (int));
-  ASSERT (array_len != 0);
+  int *num_recv = malloc(nProc * sizeof (int));
+  ASSERT (num_recv != 0);
+  int *offsets = malloc(nProc * sizeof (int));
+  ASSERT (offsets != 0);
+
 
   MPI_Barrier(MPI_COMM_WORLD);
+
 
   int iter;
   double median[NITER];
   for (iter = 0; iter < NITER; iter++) 
     {
-      // recv init
-      for (k = 0; k < nProc; k++) 	
-	{
-	  for (j = 0; j < M_SZ; j++)
-	    {
-	      recv_array[j+k*M_SZ] = (double) -1;
-	    }
-	}
 
       // data init
       data_init(source_array
-		, array_len
+		, num_recv
 		, iProc
 		, nProc
 		);
 
+      // offset init
+      recv_init_mpi(recv_array
+		    , offsets
+		    , nProc
+		    );
+
       double time = -now();
       MPI_Barrier(MPI_COMM_WORLD);
 
-      const int len = array_len[iProc]; 
-      MPI_Allgather(&source_array[iProc*M_SZ],
-		    len,
-		    MPI_DOUBLE,
-		    &recv_array[0],
-		    len,
-		    MPI_DOUBLE,
-		    MPI_COMM_WORLD
-		    );
-     
+      const int len = num_recv[iProc]; 
+      MPI_Allgatherv(&source_array[iProc*M_SZ],
+		     len,
+		     MPI_DOUBLE,
+		     recv_array,
+		     num_recv, 
+		     offsets,
+		     MPI_DOUBLE,
+		     MPI_COMM_WORLD
+		     );
+      
       MPI_Barrier(MPI_COMM_WORLD);
       time += now();
       
@@ -90,6 +93,7 @@ int main (int argc, char *argv[])
 
   // validate */ 
   data_validate(recv_array
+		, num_recv
 		, nProc
 		);
 

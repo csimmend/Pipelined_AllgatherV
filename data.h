@@ -8,13 +8,13 @@
 #define source_array_ELEM(i,j) ((double *)source_array)[POSITION (i,j)]
 
 void data_init(double *source_array
-	       , int *array_len
+	       , int *num_recv
 	       , int iProc
 	       , int nProc
 	       );
 
-
 void data_validate(double *source_array
+		   , int *num_recv
 		   , int nProc
 		   );
 

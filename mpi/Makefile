@@ -1,11 +1,11 @@
-MPI_DIR=/export/opt/intel2015/impi/5.0.1.035
-CC = $(MPI_DIR)/bin64/mpicc
+#MPI_DIR=/export/opt/intel2015/impi/5.0.1.035
+#CC = $(MPI_DIR)/bin64/mpicc
 
 #MPI_DIR=/export/opt/intel2015/impi/5.0.1.035/mic
 #CC = $(MPI_DIR)/bin64/mpiicc
 
-#MPI_DIR=$(HOME)/mvapich2-2.1a_enable-threads-multiple
-#CC = $(MPI_DIR)/bin/mpicc
+MPI_DIR=$(HOME)/mvapich2-2.1a_enable-threads-multiple
+CC = $(MPI_DIR)/bin/mpicc
 
 NAME += AllgatherV
 
@@ -15,7 +15,6 @@ CFLAGS += -Wshadow
 #CFLAGS += -O3 -debug -mmic
 CFLAGS += -O3 
 CFLAGS += -std=c99
-CFLAGS += -DUSE_ALIGNMENT
 #CFLAGS += -DDEBUG
 
 ###############################################################################
@@ -23,8 +22,8 @@ CFLAGS += -DUSE_ALIGNMENT
 INCLUDE_DIR += $(MPI_DIR)/include 
 INCLUDE_DIR += ..
 
-#LIBRARY_DIR += $(MPI_DIR)/lib
-LIBRARY_DIR += $(MPI_DIR)/lib64
+LIBRARY_DIR += $(MPI_DIR)/lib
+#LIBRARY_DIR += $(MPI_DIR)/lib64
 #LIBRARY_DIR += $(MPI_DIR)/lib64/mic
 
 LDFLAGS += $(addprefix -L,$(LIBRARY_DIR))
@@ -33,10 +32,11 @@ CFLAGS += $(addprefix -I,$(INCLUDE_DIR))
 
 OBJ += ../data
 OBJ += ../now
+OBJ += init
 
 LIB += m
-LIB += mpi
-#LIB += mpich
+#LIB += mpi
+LIB += mpich
 
 ###############################################################################
 
