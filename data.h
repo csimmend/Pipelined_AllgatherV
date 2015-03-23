@@ -3,6 +3,9 @@
 
 #include "constant.h"
 
+#define MAX(a, b) ( (a) > (b) ? (a) : (b))
+#define MIN(a, b) ( (a) < (b) ? (a) : (b))
+
 #define POSITION(i,j) ((i) + M_SZ * (j))
 #define array_OFFSET(i,j) (POSITION (i,j) * sizeof(double))
 #define source_array_ELEM(i,j) ((double *)source_array)[POSITION (i,j)]

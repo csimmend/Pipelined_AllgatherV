@@ -65,7 +65,8 @@ int main (int argc, char *argv[])
 
   int iter;
   double median[NITER];
-  gaspi_queue_id_t queue_id = 0;
+  gaspi_queue_id_t queue_id_left = 0;
+  gaspi_queue_id_t queue_id_right = 0;
 
   for (iter = 0; iter < NITER; iter++) 
     {
@@ -86,7 +87,6 @@ int main (int argc, char *argv[])
 				, nProc
 				);
 
-
       double time = -now();
       MPI_Barrier(MPI_COMM_WORLD);
 
@@ -95,7 +95,6 @@ int main (int argc, char *argv[])
 	{
 	  const int len = num_recv[iProc] * sizeof(double); 
 	  const gaspi_notification_id_t data_available = iProc; // left going
-	  swap_queue_and_wait(&queue_id);
 	  SUCCESS_OR_DIE ( gaspi_write_notify
 			   ( segment_id
 			     , array_OFFSET (0, iProc)
@@ -105,7 +104,7 @@ int main (int argc, char *argv[])
 			     , len
 			     , data_available
 			     , num_recv[iProc] // num_recv == notification val  
-			     , queue_id
+			     , queue_id_left
 			     , GASPI_BLOCK
 			     ));
 	}
@@ -115,7 +114,6 @@ int main (int argc, char *argv[])
 	{
 	  const int len = num_recv[iProc] * sizeof(double); 
 	  const gaspi_notification_id_t data_available = iProc + nProc; // right going
-	  swap_queue_and_wait(&queue_id);
 	  SUCCESS_OR_DIE ( gaspi_write_notify
 			   ( segment_id
 			     , array_OFFSET (0, iProc)
@@ -125,7 +123,7 @@ int main (int argc, char *argv[])
 			     , len
 			     , data_available
 			     , num_recv[iProc] // num_recv == notification val  
-			     , queue_id
+			     , queue_id_right
 			     , GASPI_BLOCK
 			     ));
 	}
@@ -147,15 +145,20 @@ int main (int argc, char *argv[])
 					      , &value
 					      ));
 	  int to, array_id;
+	  gaspi_queue_id_t queue_id = 0;
 	  if (id >= nProc)
 	    {
 	      array_id = id - nProc ;
 	      to = right;
+	      swap_queue_and_wait(&queue_id_right);
+	      queue_id = queue_id_right;
 	    }
 	  else
 	    {
 	      array_id = id;
 	      to = left;
+	      swap_queue_and_wait(&queue_id_left);
+	      queue_id = queue_id_left;
 	    }
 
 	  // we might receive some messages twice (!!!) 
@@ -172,7 +175,6 @@ int main (int argc, char *argv[])
 	      if (array_id != to) 
 	      	{
 	      	    const int len = num_recv[array_id] * sizeof(double); 
-	      	    swap_queue_and_wait(&queue_id);
 	      	    SUCCESS_OR_DIE ( gaspi_write_notify
 			       ( segment_id
 				 , array_OFFSET (0, array_id)

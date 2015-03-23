@@ -25,17 +25,13 @@ void data_init(double *source_array
     }
 
   // num_recv allgatherv
-#if 0
   for (k = 0; k < nProc; k++) 	
     {
-      num_recv[k] = M_SZ;
+      int L_SZ = MIN(MAX(M_SZ/nProc*k,1),M_SZ);
+      //int L_SZ = M_SZ;
+      //num_recv[k] = (k % 2 == 0) ? L_SZ : 1;
+      num_recv[k] = L_SZ;
     }
-#else 
-  for (k = 0; k < nProc; k++) 	
-    {
-      num_recv[k] = (k % 8 == 0) ? M_SZ : 1;
-    }
-#endif
 
 }
 
